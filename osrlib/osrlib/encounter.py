@@ -1,3 +1,12 @@
+"""Module for managing encounters in the game.
+
+The `encounter` module defines the `Encounter` class, which can represent beings or
+things a party of adventurers may face in a dungeon. Encounters can include combat
+with monsters, reaching a quest point, meeting an NPC, or other challenges. The
+module also provides facilities for managing the flow of these encounters, including
+the initiation of combat, tracking of turn order, and resolution of the encounter's
+outcome.
+"""
 from collections import deque
 from typing import Optional
 import math
@@ -18,11 +27,15 @@ class Encounter:
     Attributes:
         name (str): The name or ID of the encounter.
         description (str): The description of the encounter (location, environment, etc.).
-        monsters (MonsterParty): The party of monsters in the encounter.
-        treasure (list): A list of the treasure in the encounter. The treasure can be any item like weapons, armor, quest pieces, or gold pieces (or gems or other valuables). Optional.
-        turn_order (deque): A deque of the combatants in the encounter, sorted by initiative roll.
+        monster_party (MonsterParty): The party of monsters in the encounter, if any.
+        treasure (list):
+            A list of the treasure in the encounter. The treasure can be any item like weapons, armor,
+            quest pieces, or gold pieces (or gems or other valuables).
+        pc_party (Optional[Party]): The party of player characters involved in the encounter.
+        combat_queue (deque): A deque of the combatants in the encounter, sorted by initiative roll.
         is_started (bool): Whether the encounter has started.
         is_ended (bool): Whether the encounter has ended.
+        log (list): A log of messages related to the encounter's events.
     """
 
     def __init__(
@@ -36,9 +49,11 @@ class Encounter:
 
         Args:
             name (str): The name or ID of the encounter.
-            description (str): The description of the encounter (location, environment, etc.). Optional.
-            monsters (MonsterParty): The party of monsters in the encounter. Optional.
-            treasure (list): A list of the treasure in the encounter. The treasure can be any item like weapons, armor, quest pieces, or gold pieces (or gems or other valuables). Optional.
+            description (str, optional): The description of the encounter (location, environment, etc.).
+            monster_party (MonsterParty, optional): The party of monsters in the encounter.
+            treasure (list, optional):
+                A list of the treasure in the encounter. The treasure can be any item like
+                weapons, armor, quest pieces, or gold pieces (or gems or other valuables).
         """
         self.name = name
         self.description = description
@@ -60,7 +75,7 @@ class Encounter:
         else:
             return f"{self.name}: {self.description} ({len(self.monster_party.members)} {self.monster_party.members[0].name if self.monster_party.members else ''})"
 
-    def log_mesg(self, message: str):
+    def log_mesg(self, message: str) -> None:
         """Log an encounter log message."""
         self.log.append(message)
 
@@ -68,7 +83,16 @@ class Encounter:
         """Return the encounter log as a string."""
         return "\n".join(self.log)
 
-    def start_encounter(self, party: Party):
+    def start_encounter(self, party: Party) -> None:
+        """Start the encounter.
+
+        This method starts the encounter, which might mean starting combat with monsters, but could also be used to
+        signify the start of a non-combat encounter. For an example, an encounter could be a trap that the party
+        discovers and must disarm, or a puzzle the party must solve, or a quest point they have reached.
+
+        Args:
+            party (Party): The party of player characters involved in the encounter.
+        """
         self.is_started = True
         logger.debug(f"Starting encounter '{self.name}'...")
         self.log_mesg(pylog.last_message)
@@ -98,7 +122,7 @@ class Encounter:
             self.log_mesg(pylog.last_message)
             self._start_combat()
 
-    def _start_combat(self):
+    def _start_combat(self) -> None:
         logger.debug(f"Starting combat in encounter '{self.name}'...")
         self.log_mesg(pylog.last_message)
 
@@ -132,7 +156,12 @@ class Encounter:
         # All members of one party killed - end the encounter
         self.end_encounter()
 
-    def execute_combat_round(self, round_num: int):
+    def execute_combat_round(self, round_num: int) -> None:
+        """Execute a single round of combat.
+
+        Args:
+            round_num (int): The current round number.
+        """
         logger.debug(f"Starting combat round {round_num}...")
         self.log_mesg(pylog.last_message)
 
@@ -206,7 +235,7 @@ class Encounter:
         # Add the attacker back into the combat queue
         self.combat_queue.append(attacker)
 
-    def end_encounter(self):
+    def end_encounter(self) -> None:
         logger.debug(f"Ending encounter '{self.name}'...")
 
         if self.pc_party:
@@ -225,13 +254,13 @@ class Encounter:
         self.is_ended = True
 
     @staticmethod
-    def get_random_encounter(dungeon_level: int):
+    def get_random_encounter(dungeon_level: int) -> "Encounter":
         """Get a random encounter based on the dungeon level.
 
         The dungeon_level corresponds to the monster's number of hit dice, and the encounter will contain monsters of
         the same type and at that level (number of hit dice). For example, if dungeon_level is 1, the encounter will
-        contain monsters with 1d8 (or 1d8+n) hit die. If dungeon_level is 3, the encounter will contain
-        monsters with 3 hit dice (or 3d8+n).
+        contain monsters with 1d8 or 1d8+n hit die. If dungeon_level is 3, the encounter will contai monsters with 3d8
+        or 3d8+n hit dice.
 
         Args:
             dungeon_level (int): The level of dungeon the encounter should be appropriate for.
@@ -239,7 +268,6 @@ class Encounter:
         Returns:
             Encounter: A random encounter.
         """
-
         # Get a random monster type from the stats blocks in the monster_manual module. The monster type is based dungeon level and the first number in the monster's hit dice (e.g., the 1 in 1d8 or the 2 in 2d8).
         monsters_of_level = [
             monster
@@ -254,7 +282,7 @@ class Encounter:
             monster_party=monsters,
         )
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
         """Serialize the Encounter instance to a dictionary format.
 
         This method converts the Encounter's attributes, including the associated MonsterParty, into a dictionary.
@@ -279,7 +307,7 @@ class Encounter:
         return encounter_dict
 
     @classmethod
-    def from_dict(cls, encounter_dict: dict) -> 'Encounter':
+    def from_dict(cls, encounter_dict: dict) -> "Encounter":
         """Deserialize a dictionary into an Encounter instance.
 
         This class method creates a new instance of Encounter using the data provided in a dictionary.
