@@ -123,6 +123,10 @@ class Encounter:
             self._start_combat()
 
     def _start_combat(self) -> None:
+        """Start combat within the encounter.
+
+        This private method initiates combat, handling initiative rolls and combat rounds.
+        """
         logger.debug(f"Starting combat in encounter '{self.name}'...")
         self.log_mesg(pylog.last_message)
 
@@ -179,8 +183,9 @@ class Encounter:
             )
             attack_roll = (
                 attacker.get_attack_roll()
-            )  # TODO: Pass attack type (e.g., MELEE, RANGED, SPELL, etc.) to get_attack_roll()
-            # TODDO: attack_item = attacker.inventory.get_equipped_item_by_type(attack_roll.attack_type)
+            )
+            # TODO: Pass attack type (e.g., MELEE, RANGED, SPELL, etc.) to get_attack_roll()
+            # TODO: attack_item = attacker.inventory.get_equipped_item_by_type(attack_roll.attack_type)
             weapon = attacker.inventory.get_equipped_weapon().name.lower()
 
             # Natural 20 always hits and a 1 always misses
