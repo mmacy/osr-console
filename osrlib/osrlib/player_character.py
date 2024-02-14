@@ -11,19 +11,11 @@ from osrlib.ability import (
     Wisdom,
 )
 from osrlib.character_classes import CharacterClass
-from osrlib.enums import AbilityType, CharacterClassType, ModifierType
+from osrlib.enums import AbilityType, Alignment, CharacterClassType, ModifierType
 from osrlib.inventory import Inventory
 from osrlib.dice_roller import roll_dice, DiceRoll
 from osrlib.utils import logger
 from osrlib.utils import get_data_dir_path, create_dir_tree_if_not_exist
-
-
-class Alignment(Enum):
-    """Represents the alignment of a player character (PC) or monster."""
-
-    LAWFUL = "Lawful"
-    NEUTRAL = "Neutral"
-    CHAOTIC = "Chaotic"
 
 
 class PlayerCharacter:

@@ -3,6 +3,8 @@ from osrlib.adventure import Adventure
 from osrlib.dungeon import Dungeon
 from osrlib.party import Party
 from osrlib.enums import OpenAIModelVersion
+from osrlib.utils import logger
+import osrlib.osrlib_pb2 as protobufs
 
 @pytest.fixture
 def sample_adventure() -> Adventure:
@@ -82,3 +84,8 @@ def test_load_adventure(sample_adventure, tmp_path):
     assert len(loaded_adventure.dungeons) == len(sample_adventure.dungeons)
     assert loaded_adventure.active_dungeon.name == sample_adventure.dungeons[0].name
     assert loaded_adventure.active_party.name == default_party.name
+
+def test_adventure_proto():
+    adventure_proto = protobufs.Adventure()
+    adventure_proto.name = "Proto Adventure"
+    logger.debug(adventure_proto.name)

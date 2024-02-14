@@ -38,6 +38,11 @@ theme:
     #code: Martian Mono # BIG!
 
   features:
+    - header.autohide
+    - search.share
+    - search.suggest
+    - toc.follow
+
     - navigation.footer
     - navigation.indexes
     - navigation.instant
@@ -48,13 +53,6 @@ theme:
     - navigation.tabs.sticky
     - navigation.top
     - navigation.tracking
-
-    - toc.follow
-
-    - search.suggest
-    - search.share
-
-    - header.autohide
 
 markdown_extensions:
   - admonition
@@ -85,7 +83,7 @@ plugins:
           options:
             docstring_options:
               ignore_init_summary: true
-            docstring_section_style: list
+            docstring_section_style: table
             filters: ["!^_"]
             heading_level: 2
             inherited_members: false

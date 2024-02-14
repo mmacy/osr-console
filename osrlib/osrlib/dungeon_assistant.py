@@ -17,7 +17,6 @@ dm_init_message = (
     "to initiate this journey."
 )
 
-
 system_message = [
     {
         "role": "system",

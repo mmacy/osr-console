@@ -15,7 +15,7 @@ from osrlib.dungeon import Dungeon
 from osrlib.party import Party
 from osrlib.quest import Quest
 from osrlib.utils import get_data_dir_path, create_dir_tree_if_not_exist
-
+import osrlib.osrlib_pb2 as osrlib_pb2
 
 class DungeonNotFoundError(Exception):
     """Exception raised when a given dungeon isn't in the adventure's list of dungeons."""
@@ -133,6 +133,25 @@ class Adventure:
             # "quests": [quest.to_dict() for quest in self.quests],
         }
         return adventure_dict
+
+    def to_proto(self) -> osrlib_pb2.Adventure:
+        """Convert the adventure instance to a protobuf message.
+
+        Returns:
+            osrlib_pb2.Adventure: A protobuf message representation of the adventure.
+        """
+        adventure_proto = osrlib_pb2.Adventure()
+
+        adventure_proto.name = self.name
+        adventure_proto.description = self.description
+        adventure_proto.introduction = self.introduction
+        for dungeon in self.dungeons:
+            dungeon_proto = adventure_proto.dungeons.add()
+            dungeon_proto.MergeFrom(dungeon.to_proto())
+        adventure_proto.active_dungeon.MergeFrom(self.active_dungeon.to_proto())
+        adventure_proto.active_party.MergeFrom(self.active_party.to_proto())
+
+        return adventure_proto
 
     @classmethod
     def from_dict(cls, adventure_dict):

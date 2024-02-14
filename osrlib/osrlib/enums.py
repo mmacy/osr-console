@@ -10,6 +10,13 @@ class AbilityType(Enum):
     CHARISMA = "Charisma"
 
 
+class Alignment(Enum):
+    """Represents the alignment of a player character (PC) or monster."""
+
+    LAWFUL = "Lawful"
+    NEUTRAL = "Neutral"
+    CHAOTIC = "Chaotic"
+
 class AttackType(Enum):
     MELEE = "Meelee"
     RANGED = "Ranged"

@@ -1,0 +1,296 @@
+syntax = "proto3";
+package com.osrapps.osrlib;
+
+enum Alignment {
+    LAWFUL = 0;
+    NEUTRAL = 1;
+    CHAOTIC = 2;
+}
+
+enum AbilityType {
+    STRENGTH = 0;
+    INTELLIGENCE = 1;
+    WISDOM = 2;
+    DEXTERITY = 3;
+    CONSTITUTION = 4;
+    CHARISMA = 5;
+}
+
+enum Direction {
+    NORTH = 0;
+    SOUTH = 1;
+    EAST = 2;
+    WEST = 3;
+    UP = 4;
+    DOWN = 5;
+}
+
+enum CharacterClassType {
+    CLERIC = 0;
+    DWARF = 1;
+    ELF = 2;
+    FIGHTER = 3;
+    HALFLING = 4;
+    MAGIC_USER = 5;
+    THIEF = 6;
+    COMMONER = 7;
+}
+
+enum ItemType {
+    ARMOR = 0;
+    WEAPON = 1;
+    SPELL = 2;
+    EQUIPMENT = 3;
+    MAGIC_ITEM = 4;
+    ITEM = 5;
+    GEMS_JEWELRY = 6;
+}
+
+enum TreasureType {
+    NONE = 0;
+    A = 1;
+    B = 2;
+    C = 3;
+    D = 4;
+    E = 5;
+    F = 6;
+    G = 7;
+    H = 8;
+    I = 9;
+    J = 10;
+    K = 11;
+    L = 12;
+    M = 13;
+    N = 14;
+    O = 15;
+    P = 16;
+    Q = 17;
+    R = 18;
+    S = 19;
+    T = 20;
+    U = 21;
+    V = 22;
+}
+
+// Adventure represents the main container for an adventure session, including
+// details about its dungeons, quests, and the party of player characters.
+message Adventure {
+  // The name of the adventure.
+  string name = 1;
+
+  // A brief description of the adventure's premise or goal.
+  string description = 2;
+
+  // An extended introduction to the adventure, setting the scene for the players.
+  string introduction = 3;
+
+  // A list of dungeons that are part of the adventure.
+  repeated Dungeon dungeons = 4;
+
+  // The currently active dungeon the party is exploring.
+  Dungeon active_dungeon = 5;
+
+  // Information about the party undertaking the adventure.
+  Party active_party = 6;
+}
+
+// Dungeon describes a single dungeon in the adventure, which may contain multiple locations.
+message Dungeon {
+  // The name of the dungeon.
+  string name = 1;
+
+  // A description of the dungeon's theme or distinguishing features.
+  string description = 2;
+
+  // The locations within the dungeon, each representing a room or area.
+  repeated Location locations = 3;
+
+  // The ID of the location where the party starts their exploration of this dungeon.
+  int32 start_location_id = 4;
+
+  // A unique identifier for the dungeon.
+  string id = 5;
+}
+
+// Location represents a specific area or room within a dungeon, detailing its layout and any encounters.
+message Location {
+    // A unique identifier for the location within its dungeon.
+    int32 id = 1;
+
+    // The width of the location in feet.
+    int32 width = 2;
+
+    // The length of the location in feet.
+    int32 length = 3;
+
+    // Possible exits from this location, detailing the direction and destination.
+    repeated Exit exits = 4;
+
+    // Keywords associated with this location to help describe its appearance or atmosphere.
+    repeated string keywords = 5;
+
+    // An encounter that can occur in this location, involving NPCs or monsters.
+    Encounter encounter = 6;
+
+    // Indicates whether the party has already visited this location.
+    bool is_visited = 7;
+  }
+
+  // Exit describes a way out of a dungeon location, specifying its direction and where it leads.
+  message Exit {
+  // The cardinal direction of the exit (e.g., NORTH, SOUTH).
+  Direction direction = 1;
+
+  // The identifier of the location this exit leads to.
+  int32 destination = 2;
+
+  // Indicates whether the exit is locked and requires a key or puzzle to open.
+  bool locked = 3;
+}
+
+// Encounter represents a specific event or challenge that player characters can face in a location.
+message Encounter {
+  // The name of the encounter, often indicating the type of challenge or enemy.
+  string name = 1;
+
+  // A brief description of the encounter, setting the scene for the players.
+  string description = 2;
+
+  // Details of the monsters involved in this encounter, if any.
+  Monster monsters = 3;
+
+  // The type of treasure that can be discovered upon successfully overcoming the encounter.
+  TreasureType treasure_type = 4;
+
+  // Indicates whether the encounter has been resolved or is still ongoing.
+  bool is_ended = 5;
+}
+
+// Monster provides the stats and information for a creature involved in an encounter.
+message Monster {
+  // The name of the monster.
+  string name = 1;
+
+  // A description of the monster, including its appearance and behavior.
+  string description = 2;
+
+  // The monster's armor class, determining how difficult it is to hit.
+  int32 armor_class = 3;
+
+  // The hit dice notation, determining the monster's health.
+  string hit_dice = 4;
+
+  // The movement speed of the monster.
+  int32 movement = 5;
+
+  // The number of special abilities the monster has.
+  int32 num_special_abilities = 6;
+
+  // The number of attacks the monster can make per round.
+  int32 attacks_per_round = 7;
+
+  // The notation for the damage dealt by the monster's attack.
+  string damage_per_attack = 8;
+
+  // A notation indicating the number of this type of monster that appears.
+  string num_appearing = 9;
+
+  // The class used for saving throws, hinting at the monster's resilience.
+  string save_as_class = 10;
+
+  // The effective level of the monster for the purpose of saving throws.
+  int32 save_as_level = 11;
+
+  // The morale of the monster, influencing its likelihood to flee or continue fighting.
+  int32 morale = 12;
+
+  // The type of treasure the monster guards or carries.
+  TreasureType treasure_type = 13;
+
+  // The alignment of the monster, which can influence its behavior and affiliations.
+  Alignment alignment = 14;
+}
+
+// Party represents the group of player characters (PCs) participating in the adventure, detailing their stats and inventory.
+message Party {
+  // A list of characters in the party.
+  repeated Character characters = 1;
+
+  // The name or title of the party.
+  string name = 2;
+}
+
+// Character encapsulates all information about a player character (PC), including abilities and equipment.
+message Character {
+  // The name of the character.
+  string name = 1;
+
+  // The class type of the character, affecting available abilities and roles.
+  CharacterClassType character_class_type = 2;
+
+  // The current level of the character, impacting their strength and skills.
+  int32 level = 3;
+
+  // The maximum health points (HP) the character can have.
+  int32 max_hp = 4;
+
+  // The current health points (HP) of the character.
+  int32 hp = 5;
+
+  // The total experience points (XP) earned by the character.
+  int32 experience_points = 6;
+
+  // A map of the character's abilities, such as strength and intelligence.
+  map<string, Ability> abilities = 7;
+
+  // The inventory of items the character is carrying, including weapons and armor.
+  Inventory inventory = 8;
+}
+
+// Ability represents a specific skill or attribute of a character, quantified by a score.
+message Ability {
+  // The type of ability, such as STRENGTH or INTELLIGENCE.
+  AbilityType ability_type = 1;
+
+  // The numerical score representing the character's proficiency in this ability.
+  int32 score = 2;
+}
+
+// Inventory holds a collection of items owned by a character or found within a location.
+message Inventory {
+  // A list of items within the inventory.
+  repeated Item items = 1;
+
+  // The name of the character or entity that owns this inventory.
+  string owner = 2;
+}
+
+// Item describes an object that can be equipped, used, sold, or traded by characters.
+message Item {
+  // The name of the item.
+  string name = 1;
+
+  // The category of the item, such as WEAPON or ARMOR.
+  ItemType item_type = 2;
+
+  // A list of character classes that are able to use or equip this item.
+  repeated CharacterClassType usable_by_classes = 3;
+
+  // The maximum number of this item that can be equipped at once.
+  int32 max_equipped = 4;
+
+  // Indicates whether the item is currently equipped by the owner.
+  bool is_equipped = 5;
+
+  // The gold piece (gp) value of the item, used for trading.
+  int32 gp_value = 6;
+
+  // For weapons, the damage die roll notation (e.g., "1d6").
+  string to_hit_damage_die = 7;
+
+  // The effective range of the item if it's a weapon. A value of 0 means not applicable.
+  int32 range = 8;
+
+  // For armor, the modifier to the character's armor class (AC).
+  int32 ac_modifier = 9;
+}

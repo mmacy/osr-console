@@ -29,7 +29,7 @@ from osrlib.enums import Direction, OpenAIModelVersion
 from osrlib.utils import logger
 from osrlib.encounter import Encounter
 from osrlib.dice_roller import roll_dice
-
+import osrlib.osrlib_pb2 as osrlib_pb2
 
 class Exit:
     """Represents an exit leading from one [Location][osrlib.dungeon.Location] to another in a [Dungeon][osrlib.dungeon.Dungeon].
@@ -109,6 +109,29 @@ class Exit:
     def from_dict(cls, data):
         """Deserializes a dictionary representation of an `Exit` object. Typically done after getting the dictionary from persistent storage."""
         return cls(Direction(data["direction"]), data["destination"], data["locked"])
+
+    def to_proto(self) -> osrlib_pb2.Exit:
+        """Converts the Exit instance to a protobuf message.
+
+        Returns:
+            osrlib_pb2.Exit: A protobuf message representation of the exit.
+        """
+        exit_proto = osrlib_pb2.Exit()
+
+        # Map from Python enum values to protobuf enum values
+        direction_map = {
+            "N": osrlib_pb2.Direction.NORTH,
+            "S": osrlib_pb2.Direction.SOUTH,
+            "E": osrlib_pb2.Direction.EAST,
+            "W": osrlib_pb2.Direction.WEST,
+            "U": osrlib_pb2.Direction.UP,
+            "D": osrlib_pb2.Direction.DOWN,
+        }
+        exit_proto.direction = direction_map[self.direction.value]
+        exit_proto.destination = self.destination
+        exit_proto.locked = self.locked
+
+        return exit_proto
 
 
 class ExitAlreadyExistsError(Exception):
@@ -232,6 +255,28 @@ class Location:
             Encounter.from_dict(data["encounter"]) if data["encounter"] else None,
             data["is_visited"],
         )
+
+
+    def to_proto(self) -> osrlib_pb2.Location:
+        """Converts the Location instance to a protobuf message.
+
+        Returns:
+            osrlib_pb2.Location: A protobuf message representation of the location.
+        """
+        location_proto = osrlib_pb2.Location()
+
+        location_proto.id = self.id
+        location_proto.width = self.dimensions['width']
+        location_proto.length = self.dimensions['length']
+        for exit in self.exits:
+            exit_proto = location_proto.exits.add()
+            exit_proto.MergeFrom(exit.to_proto())
+        location_proto.keywords.extend(self.keywords)
+        if self.encounter:
+            location_proto.encounter.MergeFrom(self.encounter.to_proto())
+        location_proto.is_visited = self.is_visited
+
+        return location_proto
 
 
 class LocationNotFoundError(Exception):
@@ -668,3 +713,21 @@ class Dungeon:
             data["start_location_id"],  # will be the location that was current when the dungeon was saved
             data["id"],
         )
+
+    def to_proto(self) -> osrlib_pb2.Dungeon:
+        """Converts the dungeon instance to a protobuf message.
+
+        Returns:
+            osrlib_pb2.Dungeon: A protobuf message representation of the dungeon.
+        """
+        dungeon_proto = osrlib_pb2.Dungeon()
+
+        dungeon_proto.name = self.name
+        dungeon_proto.description = self.description
+        for location in self.locations:
+            location_proto = dungeon_proto.locations.add()
+            location_proto.MergeFrom(location.to_proto())
+        dungeon_proto.start_location_id = self.current_party_location.id
+        dungeon_proto.id = self.id
+
+        return dungeon_proto
