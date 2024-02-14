@@ -1,5 +1,7 @@
 import pytest
 from osrlib.monster import MonsterStatsBlock, CharacterClassType, TreasureType, Alignment
+from osrlib.osrlib_pb2 import TreasureType as TreasureTypeProto
+from osrlib.osrlib_pb2 import Alignment as AlignmentProto
 
 @pytest.fixture
 def default_monster_stats_block():
@@ -69,6 +71,23 @@ def test_to_dict(default_monster_stats_block: MonsterStatsBlock):
     assert monster_dict["morale"] == 12
     assert monster_dict["treasure_type"] == "NONE"
     assert monster_dict["alignment"] == "NEUTRAL"
+
+def test_to_proto(default_monster_stats_block: MonsterStatsBlock):
+    monster_proto = default_monster_stats_block.to_proto()
+    assert monster_proto.name == "Test Monster"
+    assert monster_proto.description == ""
+    assert monster_proto.armor_class == 10
+    assert monster_proto.hit_dice == "1d8"
+    assert monster_proto.movement == 120
+    assert monster_proto.num_special_abilities == 0
+    assert monster_proto.attacks_per_round == 1
+    assert monster_proto.damage_per_attack == "1d4"
+    assert monster_proto.num_appearing == "1d6"
+    assert monster_proto.save_as_class == "FIGHTER"
+    assert monster_proto.save_as_level == 1
+    assert monster_proto.morale == 12
+    assert TreasureTypeProto.Name(monster_proto.treasure_type) == "NONE"
+    assert AlignmentProto.Name(monster_proto.alignment) == "NEUTRAL"
 
 def test_from_dict():
     monster_dict = {

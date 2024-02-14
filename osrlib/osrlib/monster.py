@@ -5,6 +5,7 @@ from osrlib.player_character import Alignment
 from osrlib.saving_throws import get_saving_throws_for_class_and_level
 from osrlib.utils import logger
 from osrlib.treasure import Treasure
+from osrlib.osrlib_pb2 import Monster as MonsterProto
 
 monster_xp = {
     "Under 1": {"base": 5, "bonus": 1},  # Not handling the "under 1" hit dice case
@@ -147,8 +148,7 @@ class MonsterStatsBlock:
         self.alignment = alignment
 
     def to_dict(self) -> dict[str, any]:
-        """
-        Serialize the MonsterStatsBlock instance to a dictionary format.
+        """Serializes the MonsterStatsBlock instance to a dictionary format.
 
         Converts the MonsterStatsBlock's attributes into a dictionary, facilitating easy serialization for storage or transmission.
         Enum values (like save_as_class) are converted to their string representations for compatibility.
@@ -169,14 +169,13 @@ class MonsterStatsBlock:
             "save_as_class": self.save_as_class.name, # Enum to string (we deserialize the string back to an enum in the from_dict method)
             "save_as_level": self.save_as_level,
             "morale": self.morale,
-            "treasure_type": self.treasure_type.name, # Enum to string (we deserialize the string back to an enum in the from_dict method
-            "alignment": self.alignment.name, # Enum to string (we deserialize the string back to an enum in the from_dict method
+            "treasure_type": self.treasure_type.name, # Enum to string (we deserialize the string back to an enum in the from_dict method)
+            "alignment": self.alignment.name, # Enum to string (we deserialize the string back to an enum in the from_dict method)
         }
 
     @classmethod
     def from_dict(cls, monster_stats_block_dict: dict) -> "MonsterStatsBlock":
-        """
-        Deserialize a dictionary into a MonsterStatsBlock instance.
+        """Deserializes a dictionary into a MonsterStatsBlock instance.
 
         This method creates a new instance of MonsterStatsBlock using the data provided in a dictionary, typically generated
         by the `to_dict` method. It ensures that enum values are appropriately converted back to their respective enum types.
@@ -199,6 +198,33 @@ class MonsterStatsBlock:
         monster_stats_block_dict['alignment'] = Alignment[monster_stats_block_dict['alignment']]
 
         return cls(**monster_stats_block_dict)
+
+    def to_proto(self) -> MonsterProto:
+        """Serializes the MonsterStatsBlock instance to a Protocol Buffer format.
+
+        Converts the MonsterStatsBlock's attributes into a Protocol Buffer format, facilitating easy serialization for storage or transmission.
+
+        Returns:
+            osrlib_pb2.Monster: A Protocol Buffer representation of the MonsterStatsBlock instance.
+        """
+        monster_stats_block_proto = MonsterProto(
+            name=self.name,
+            description=self.description,
+            armor_class=self.armor_class,
+            hit_dice=self.hit_dice,
+            movement=self.movement,
+            num_special_abilities=self.num_special_abilities,
+            attacks_per_round=self.attacks_per_round,
+            damage_per_attack=self.damage_per_attack,
+            num_appearing=self.num_appearing_dice_string,
+            save_as_class=self.save_as_class.name,
+            save_as_level=self.save_as_level,
+            morale=self.morale,
+            treasure_type=self.treasure_type.name,
+            alignment=self.alignment.name,
+        )
+
+        return monster_stats_block_proto
 
 
 class Monster:
@@ -292,7 +318,7 @@ class Monster:
 
     @property
     def is_alive(self):
-        """Gets whether the monster is alive.
+        """Whether the monster is alive.
 
         Returns:
             bool (bool): `True` if the monster has more than 0 hit points, otherwise `False`.
@@ -308,7 +334,7 @@ class Monster:
         return roll.total_with_modifier
 
     def get_to_hit_target_ac(self, target_ac: int) -> int:
-        """Get the to-hit roll needed to hit a target with the given armor class."""
+        """Gets the to-hit roll needed to hit a target with the given armor class."""
         if self.hp_roll.modifier > 0:
             if self.hp_roll.num_dice < 21:
                 thac0_key = f"{self.hp_roll.num_dice}+ to {self.hp_roll.num_dice + 1}"
@@ -328,7 +354,7 @@ class Monster:
         return needed_to_hit
 
     def get_attack_rolls(self) -> List[DiceRoll]:
-        """Roll a 1d20 for each attack this monster has per round and return the collection of rolls."""
+        """Rolls a 1d20 for each attack this monster has per round and return the collection of rolls."""
         attack_rolls = []
 
         for _ in range(self.attacks_per_round):
@@ -342,7 +368,7 @@ class Monster:
         return roll_dice(self.damage_per_attack)
 
     def apply_damage(self, hit_points_damage: int):
-        """Apply damage to the monster by reducing the monster's hit points by the given amount, down to a minimum of 0.
+        """Applies damage to the monster by reducing the monster's hit points by the given amount, down to a minimum of 0.
 
         This method has no affect if the monster is already dead.
 
@@ -354,7 +380,7 @@ class Monster:
             self.hit_points = max(new_hp, 0)
 
     def heal(self, hit_points_healed: int):
-        """Heal the monster by restoring the given amount of hit points up to the monster's maximum hit points.
+        """Heals the monster by restoring the given amount of hit points up to the monster's maximum hit points.
 
         This method has no affect if the monster is dead.
 
@@ -377,7 +403,7 @@ class MonsterParty:
     """
 
     def __init__(self, monster_stats_block: MonsterStatsBlock, monster_group_treasure_type: TreasureType = TreasureType.NONE):
-        """Initialize a new MonsterParty instance.
+        """Initializes a new MonsterParty instance.
 
         The number of monsters that comprise the monster party, as well as hit points, armor class, and other
         statistics are determined by the given MonsterStatsBlock.
@@ -402,7 +428,7 @@ class MonsterParty:
 
     @property
     def is_alive(self) -> bool:
-        """Get whether the monster party is alive.
+        """Whether the monster party is alive.
 
         Returns:
             bool: `True` if at least one monster in the party has more than 0 hit points, otherwise `False`.
@@ -440,28 +466,28 @@ class MonsterParty:
         (like a database or a file) by first converting it to a dictionary. The serialized dictionary can then be used
         to rehydrate a MonsterParty instance using the `from_dict` class method.
 
+        This method does not serialize the dynamic state of the MonsterParty itself (such as the current health of
+        monsters or their treasure. It serializes the MonsterStatsBlock, which can be used to recreate a similar
+        MonsterParty with a new state.
+
         Returns:
-            dict[str, any]: A dictionary representation of the MonsterStatsBlock associated with the MonsterParty. This dictionary
-                contains key-value pairs representing the attributes of the MonsterStatsBlock, such as 'name',
-                'armor_class', 'hit_dice', etc.
+            dict[str, any]: A dictionary representation of the MonsterStatsBlock associated with the MonsterParty.
+                            This dictionary contains key-value pairs representing the attributes of the
+                            MonsterStatsBlock, such as 'name', 'armor_class', 'hit_dice', etc.
 
         Example:
-            >>> monster_party = MonsterParty(monster_stats_block)
-            >>> monster_party_dict = monster_party.to_dict()
-            >>> # The monster_party_dict can now be used to store the state of the MonsterParty
-            >>> # and later to recreate it using MonsterParty.from_dict(monster_party_dict)
-
-        Note:
-            This method does not serialize the dynamic state of the MonsterParty itself (such as the current health of
-            monsters or their treasure. It serializes the MonsterStatsBlock, which can be used to recreate a similar
-            MonsterParty with a new state.
+            ```python
+            monster_party = MonsterParty(monster_stats_block)
+            monster_party_dict = monster_party.to_dict()
+            # The monster_party_dict can now be used to store the state of the MonsterParty
+            # and later to recreate it using MonsterParty.from_dict(monster_party_dict)
+            ```
         """
         return self.monster_stats_block.to_dict()
 
     @classmethod
     def from_dict(cls, monster_stats_block_dict: dict) -> "MonsterParty":
-        """
-        Create a MonsterParty instance from a dictionary representing a MonsterStatsBlock.
+        """Creates a MonsterParty instance from a dictionary representing a MonsterStatsBlock.
 
         This class method deserializes a dictionary into a MonsterStatsBlock instance and then uses it to initialize a
         new MonsterParty. It's particularly useful for rehydrating a MonsterParty from its serialized state, such as
@@ -492,3 +518,37 @@ class MonsterParty:
         """
         monster_stats = MonsterStatsBlock.from_dict(monster_stats_block_dict)
         return cls(monster_stats)
+
+    def to_proto(self) -> "osrlib_pb2.Monster":
+        """Serializes the MonsterParty instance to a Protocol Buffer format.
+
+        Converts the MonsterParty's MonsterStatsBlock into a Protocol Buffer format, facilitating easy serialization
+        for storage or transmission.
+
+        This method does not serialize the dynamic state of the MonsterParty itself (such as the current health of
+        monsters or their treasure). It serializes the MonsterStatsBlock, which can be used to recreate a similar
+        MonsterParty with a new state.
+
+        Returns:
+            osrlib_pb2.Monster: A Protocol Buffer representation of the MonsterParty's MonsterStatsBlock.
+
+        Examples:
+            ```python
+            monster_party = MonsterParty(monster_stats_block)
+            monster_party_proto = monster_party.to_proto()
+
+            # The monster_party_proto can now be used to store the state of the MonsterParty to
+            # persistent storage (like a database or a file), like so:
+            with open('monster_party.bin', 'wb') as file:
+                file.write(monster_party_proto.SerializeToString())
+
+            # Later, you recreate it using MonsterParty.from_proto(monster_party_proto) by loading
+            # the Protocol Buffer from the persistent storage and deserializing it:
+            with open('monster_party.bin', 'rb') as file:
+                monster_party_proto = osrlib_pb2.Monster()
+                monster_party_proto.ParseFromString(file.read())
+                rehydrated_monster_party = MonsterParty.from_proto(monster_party_proto)
+                print(rehydrated_monster_party)
+            ```
+        """
+        return self.monster_stats_block.to_proto()

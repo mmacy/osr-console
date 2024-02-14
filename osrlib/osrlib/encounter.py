@@ -1,3 +1,30 @@
+"""The Encounter module contains the [Encounter][osrlib.encounter.Encounter] class which can represent a:
+
+- Combat encounter with a [MonsterParty][osrlib.monster.MonsterParty].
+- Notable location that the party discovers or explores, and possibly receives information or treasure for reaching.
+- ...or some other non-combat encounter in which the party receives information or must complete a task.
+
+An encounter is typically associated with a [Location][osrlib.dungeon.Location] in a [Dungeon][osrlib.dungeon.Dungeon],
+and can be started and ended, with the party gaining experience points and treasure if the encounter was a combat
+encounter and the party was victorious.
+
+The `Encounter` class also provides methods for serializing and deserializing the encounter to and from a dictionary
+or Protocol Buffers message, which is useful for saving the state of an encounter to persistent storage.
+
+Examples:
+    ```python
+    from osrlib.encounter import Encounter
+    from osrlib.monster_manual import goblin_stats
+
+    # Create a new encounter with a party of Goblins
+    encounter = Encounter(
+        name="Goblin's Lair",
+        description="A goblin hideout in a cave.",
+        monster_party=MonsterParty(goblin_stats),
+        treasure_type=TreasureType.C # The treasure type for Goblins in their lair
+    ```
+"""
+
 from collections import deque
 from typing import Optional
 import math
@@ -8,6 +35,7 @@ from osrlib.monster_manual import monster_stats_blocks
 from osrlib.utils import logger, last_message_handler as pylog
 from osrlib.dice_roller import roll_dice
 from osrlib.treasure import Treasure, TreasureType
+from osrlib.osrlib_pb2 import Encounter as EncounterProto
 
 
 class Encounter:
@@ -36,7 +64,7 @@ class Encounter:
         description: str = "",
         monster_party: MonsterParty = None,
         treasure_type: TreasureType = TreasureType.NONE,
-    ):
+    ) -> "Encounter":
         """Initialize the encounter object.
 
         Args:
@@ -312,7 +340,7 @@ class Encounter:
         Returns:
             dict: A dictionary representation of the Encounter instance.
 
-        Example:
+        Examples:
         ```python
         # Assuming 'encounter' is an instance of Encounter
         encounter_dict = encounter.to_dict()
@@ -381,3 +409,41 @@ class Encounter:
 
         except KeyError as e:
             raise ValueError(f"Missing key in encounter_dict: {e}")
+
+    def to_proto(self) -> EncounterProto:
+        """Serialize the Encounter instance to a Protocol Buffers message.
+
+        This method converts the Encounter's attributes, including the associated MonsterParty, into a Protocol Buffers
+        message. This is particularly useful for saving the state of an encounter to persistent storage.
+
+        Returns:
+            Encounter: A Protocol Buffers message representation of the Encounter instance.
+
+        Examples:
+            ```python
+            # Assuming 'encounter' is an instance of Encounter
+            encounter_proto = encounter.to_proto()
+
+            # The encounter_proto could now be used to store the state of the Encounter,
+            # for example by converting the message to bytes and storing in a file, like so:
+            with open('encounter.pb', 'wb') as f:
+                f.write(encounter_proto.SerializeToString())
+
+            # You could then load the encounter from the file like so:
+            with open('encounter.pb', 'rb') as f:
+                encounter_proto = EncounterProto()
+                encounter_proto.ParseFromString(f.read())
+                loaded_encounter = Encounter.from_proto(encounter_proto)
+
+                # You now have a rehydrated instance of the Encounter class
+                print(loaded_encounter)
+            ```
+        """
+        encounter_proto = EncounterProto(
+            name=self.name,
+            description=self.description,
+            monsters=self.monster_party.to_proto(),
+            treasure_type=self.treasure_type.value[0], # Store only the first element of the tuple
+            is_ended=self.is_ended,
+        )
+        return encounter_proto
